@@ -1,10 +1,4 @@
-main.py
-Last month
-Aug 4
 
-You uploaded an item
-Text
-main.py
 from function import generate_piece, print_board
 
 DEV_MODE = True
