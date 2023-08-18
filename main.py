@@ -1,185 +1,171 @@
-
-from function import generate_piece, print_board
-
-DEV_MODE = True
-
+from function import print_board, generate_piece
 
 def main(game_board: [[int, ], ]) -> [[int, ], ]:
-    """
-    2048 main function, runs a game of 2048 in the console.
+    # Seed the board with two tiles to start with
+    piece1 = generate_piece(game_board)
+    game_board[piece1['row']][piece1['column']] = piece1['value']
+    
+    piece2 = generate_piece(game_board)
+    while (piece2['row'], piece2['column']) == (piece1['row'], piece1['column']):
+        piece2 = generate_piece(game_board)  # make sure the two starting tiles are different
+    game_board[piece2['row']][piece2['column']] = piece2['value']
 
-    Uses the following keys:
-    w - shift up
-    a - shift left
-    s - shift down
-    d - shift right
-    q - ends the game and returns control of the console
-    :param game_board: a 4x4 2D list of integers representing a game of 2048
-    :return: returns the ending game board
-    """
-    # Initialize board's first cell
+    print_board(game_board)
 
-    # TODO: generate a random piece and location using the generate_piece function
-    # TODO: place the piece at the specified location
-    our_dict = generate_piece(game_board)
-    '''game_board[our_dict['row']][our_dict['column']] = our_dict['value']'''
-    '''game_board[0][1] = 4
-    game_board[0][2] = 4
-    game_board[1][0] = 64
-    game_board[2][0] = 64
-    game_board[3][1] = 128
-    game_board[3][2] = 128
-    game_board[3][3] = 0'''
 
-    print(print_board(game_board))
+    while not game_over(game_board):
+        turn = input("Enter your move (w/a/s/d or q to quit): ").lower()
+        while turn not in ['w', 'a', 's', 'd', 'q']:
+            print('You entered an invalid input. Please try again.')
+            turn = input().lower()
 
-    # Initialize game state trackers
-    '''how to stop replacing 2 with other occupied indexes'''
-    '''why is 's' not working'''
-    '''starting the game over function'''
-    '''is my code successive?'''
+        if turn == 'q':
+            print("Goodbye!")
+            break
 
-    # Game Loop
-    while True:
+        board_changed = False
+        if turn == 'a':
+            board_changed = move_left(game_board)
+        elif turn == 'd':
+            board_changed = move_right(game_board)
+        elif turn == 'w':
+            board_changed = move_up(game_board)
+        elif turn == 's':
+            board_changed = move_down(game_board)
 
-        # TODO: Reset user input variable
+        if board_changed:  # Add a new piece only if board has changed
+            piece = generate_piece(game_board)
+            game_board[piece['row']][piece['column']] = piece['value']
+            print_board(game_board)
 
-        # TODO: Take computer's turn
-        # place a random piece on the board
-        # check to see if the game is over using the game_over function
+    print("Game Over!")
+    print_board(game_board)
 
-        # TODO: Show updated board using the print_board function
+def move_left(board):
+    board_changed = False
+    for row in board:
+        # 1. Shift
+        non_zero_tiles = [tile for tile in row if tile != 0]
+        while len(non_zero_tiles) < 4:
+            non_zero_tiles.append(0)
+        # 2. Merge
+        i = 0
+        while i < 3:
+            if non_zero_tiles[i] == non_zero_tiles[i + 1] and non_zero_tiles[i] != 0:
+                non_zero_tiles[i] *= 2
+                non_zero_tiles[i + 1] = 0
+                i += 2
+                board_changed = True
+            else:
+                i += 1
+        # 3. Shift again after merging
+        new_row = [tile for tile in non_zero_tiles if tile != 0]
+        while len(new_row) < 4:
+            new_row.append(0)
+        # Check if row has changed
+        if row != new_row:
+            board_changed = True
+            for i in range(4):
+                row[i] = new_row[i]
+    return board_changed
 
-        # TODO: Take user's turn
-        # Take input until the user's move is a valid key
-        # if the user quits the game, print Goodbye and stop the Game Loop
-        # Execute the user's move
+def move_right(board):
+    board_changed = False
+    for row in board:
+        # 1. Shift
+        non_zero_tiles = [tile for tile in row if tile != 0]
+        while len(non_zero_tiles) < 4:
+            non_zero_tiles.insert(0, 0)
+        # 2. Merge
+        i = 3
+        while i > 0:
+            if non_zero_tiles[i] == non_zero_tiles[i - 1] and non_zero_tiles[i] != 0:
+                non_zero_tiles[i] *= 2
+                non_zero_tiles[i - 1] = 0
+                i -= 2
+                board_changed = True
+            else:
+                i -= 1
+        # 3. Shift again after merging
+        new_row = [tile for tile in non_zero_tiles if tile != 0]
+        while len(new_row) < 4:
+            new_row.insert(0, 0)
+        # Check if row has changed
+        if row != new_row:
+            board_changed = True
+            for i in range(4):
+                row[i] = new_row[i]
+    return board_changed
 
-        # Check if the user wins
-        player = 0
-        while player == 0:
-            player += 1
-            turn = input()
-            if turn.lower() != 'w' and turn.lower() != 'a' and turn.lower() != 's' and turn.lower() != 'd' and turn.lower() != 'q':
-                print('You entered an invalid input. Please try again.')
+def move_up(board):
+    board_changed = False
+    for col in range(4):
+        # 1. Shift
+        non_zero_tiles = [board[row][col] for row in range(4) if board[row][col] != 0]
+        while len(non_zero_tiles) < 4:
+            non_zero_tiles.append(0)
+        # 2. Merge
+        i = 0
+        while i < 3:
+            if non_zero_tiles[i] == non_zero_tiles[i + 1] and non_zero_tiles[i] != 0:
+                non_zero_tiles[i] *= 2
+                non_zero_tiles[i + 1] = 0
+                i += 2
+                board_changed = True
+            else:
+                i += 1
+        # 3. Shift again after merging
+        new_col = [tile for tile in non_zero_tiles if tile != 0]
+        while len(new_col) < 4:
+            new_col.append(0)
+        # Check if col has changed
+        for row in range(4):
+            if board[row][col] != new_col[row]:
+                board_changed = True
+                board[row][col] = new_col[row]
+    return board_changed
 
-            if turn.lower() == 'a':
-                shift_completed = False
-                merge = False
-                while not shift_completed:
-                    for i in range(4):
-                        z = 0
-                        for j in range(4):
-                            if game_board[i][j] != 0:
-                                game_board[i][z] = game_board[i][j]
-                                if z != j:
-                                    game_board[i][j] = 0
-
-                                z += 1
-                    if merge:
-                        shift_completed = True
-                    if not merge:
-                        for i in range(4):
-                            for j in range(4):
-                                if 0 < j:
-                                    if game_board[i][j] == game_board[i][j - 1]:
-                                        game_board[i][j - 1] = game_board[i][j - 1] * 2
-                                        game_board[i][j] = 0
-                                        merge = True
-            elif turn.lower() == 'd':
-                shift_completed = False
-                merge = False
-                while not shift_completed:
-                    for i in range(4):
-                        z = 3
-                        for j in range(3, -1, -1):
-                            if game_board[i][j] != 0:
-                                game_board[i][z] = game_board[i][j]
-                                if z != j:
-                                    game_board[i][j] = 0
-
-                                z -= 1
-                    if merge:
-                        shift_completed = True
-                    if not merge:
-                        for i in range(4):
-                            for j in range(4):
-                                if 0 < j:
-                                    if game_board[i][j] == game_board[i][j - 1]:
-                                        game_board[i][j - 1] = game_board[i][j - 1] * 2
-                                        game_board[i][j] = 0
-                                        merge = True
-
-            elif turn.lower() == 's':
-                shift_completed = False
-                merge = False
-                while not merge:
-                    for i in range(2, -1, -1):
-                        for j in range(4):
-                            if game_board[i + 1][j] == game_board[i][j]:
-                                game_board[i + 1][j] = game_board[i + 1][j] * 2
-                                game_board[i][j] = 0
-                            if game_board[2][j] == game_board[1][j]:
-                                game_board[2][j] *= 2
-                                game_board[1][j] = 0
-                            if game_board[3][j] == game_board[2][j]:
-                                game_board[3][j] *= 2
-                                game_board[2][j] = 0
-
-                            if shift_completed:
-                                merge = True
-                            elif not shift_completed:
-                                for j in range(4):
-                                    for i in range(3):
-                                        if game_board[i][j] != 0:
-                                            if game_board[i + 1][j] == 0:
-                                                game_board[i + 1][j] = game_board[i][j]
-                                                game_board[i][j] = 0
-                                                shift_completed = True
-            elif turn.lower() == 'w':
-                shift_completed = False
-                merge = False
-                while not shift_completed:
-                    for i in range(3):
-                        for j in range(4):
-                            if game_board[i - 1][j] == 0 and game_board[i][j] != 0:
-                                game_board[i - 1][j] = game_board[i][j]
-                                if i - 1 != i:
-                                    game_board[i][j] = 0
-
-                    if merge:
-                        shift_completed = True
-                    if not merge:
-                        for i in range(3):
-                            for j in range(4):
-                                if game_board[i][j] == game_board[i - 1][j]:
-                                    game_board[i - 1][j] = game_board[i - 1][j] * 2
-                                    game_board[i][j] = 0
-                                    merge = True
-            game_board[our_dict['row']][our_dict['column']] = our_dict[
-                'value']  # we are assigning True so that this does not run again
-        print(print_board(game_board))
-
-        break
-
-    return game_board
-
+def move_down(board):
+    board_changed = False
+    for col in range(4):
+        # 1. Shift
+        non_zero_tiles = [board[row][col] for row in range(4) if board[row][col] != 0]
+        while len(non_zero_tiles) < 4:
+            non_zero_tiles.insert(0, 0)
+        # 2. Merge
+        i = 3
+        while i > 0:
+            if non_zero_tiles[i] == non_zero_tiles[i - 1] and non_zero_tiles[i] != 0:
+                non_zero_tiles[i] *= 2
+                non_zero_tiles[i - 1] = 0
+                i -= 2
+                board_changed = True
+            else:
+                i -= 1
+        # 3. Shift again after merging
+        new_col = [tile for tile in non_zero_tiles if tile != 0]
+        while len(new_col) < 4:
+            new_col.insert(0, 0)
+        # Check if col has changed
+        for row in range(4):
+            if board[row][col] != new_col[row]:
+                board_changed = True
+                board[row][col] = new_col[row]
+    return board_changed
 
 def game_over(game_board: [[int, ], ]) -> bool:
-    """
-    Query the provided board's game state.
-
-    :param game_board: a 4x4 2D list of integers representing a game of 2048
-    :return: Boolean indicating if the game is over (True) or not (False)
-    """
-    # TODO: Loop over the board and determine if the game is over
-    return False  # TODO: Don't always return false
-
+    for i in range(4):
+        for j in range(4):
+            if game_board[i][j] == 0:  # Check if there's an empty spot
+                return False
+            if i < 3 and game_board[i][j] == game_board[i + 1][j]:  # Check vertical merges
+                return False
+            if j < 3 and game_board[i][j] == game_board[i][j + 1]:  # Check horizontal merges
+                return False
+    return True
 
 if __name__ == "__main__":
     main([[0, 0, 0, 0],
           [0, 0, 0, 0],
           [0, 0, 0, 0],
           [0, 0, 0, 0]])
-
-
